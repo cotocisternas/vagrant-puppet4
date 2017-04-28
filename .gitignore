@@ -1,0 +1,5 @@
+.vagrant
+puppet/*
+veewee/*.box
+veewee/iso
+tmp/*

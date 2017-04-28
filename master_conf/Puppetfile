@@ -1,0 +1,13 @@
+#!/usr/bin/env ruby
+#^syntax detection
+
+forge "https://forgeapi.puppetlabs.com"
+
+mod 'puppetlabs-puppetdb', '5.1.2'
+mod 'puppetlabs/stdlib', '4.12.0'
+mod 'puppetlabs/concat', '1.2.3'
+mod 'puppetlabs/inifile', '1.4.3'
+mod 'puppetlabs/firewall', '1.8.0'
+mod 'puppetlabs/ntp', '4.0.0'
+mod 'puppetlabs/apt', '2.1.0'
+mod 'puppetlabs-postgresql', '4.8.0'
