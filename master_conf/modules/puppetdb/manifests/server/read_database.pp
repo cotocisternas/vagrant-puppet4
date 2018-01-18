@@ -1,21 +1,22 @@
 # PRIVATE CLASS - do not use directly
 class puppetdb::server::read_database (
-  $database            = $puppetdb::params::read_database,
-  $database_host       = $puppetdb::params::read_database_host,
-  $database_port       = $puppetdb::params::read_database_port,
-  $database_username   = $puppetdb::params::read_database_username,
-  $database_password   = $puppetdb::params::read_database_password,
-  $database_name       = $puppetdb::params::read_database_name,
-  $database_ssl        = $puppetdb::params::read_database_ssl,
-  $jdbc_ssl_properties = $puppetdb::params::read_database_jdbc_ssl_properties,
-  $database_validate   = $puppetdb::params::read_database_validate,
-  $log_slow_statements = $puppetdb::params::read_log_slow_statements,
-  $conn_max_age        = $puppetdb::params::read_conn_max_age,
-  $conn_keep_alive     = $puppetdb::params::read_conn_keep_alive,
-  $conn_lifetime       = $puppetdb::params::read_conn_lifetime,
-  $confdir             = $puppetdb::params::confdir,
-  $puppetdb_user       = $puppetdb::params::puppetdb_user,
-  $puppetdb_group      = $puppetdb::params::puppetdb_group,
+  $database               = $puppetdb::params::read_database,
+  $database_host          = $puppetdb::params::read_database_host,
+  $database_port          = $puppetdb::params::read_database_port,
+  $database_username      = $puppetdb::params::read_database_username,
+  $database_password      = $puppetdb::params::read_database_password,
+  $database_name          = $puppetdb::params::read_database_name,
+  $database_ssl           = $puppetdb::params::read_database_ssl,
+  $jdbc_ssl_properties    = $puppetdb::params::read_database_jdbc_ssl_properties,
+  $database_validate      = $puppetdb::params::read_database_validate,
+  $log_slow_statements    = $puppetdb::params::read_log_slow_statements,
+  $conn_max_age           = $puppetdb::params::read_conn_max_age,
+  $conn_keep_alive        = $puppetdb::params::read_conn_keep_alive,
+  $conn_lifetime          = $puppetdb::params::read_conn_lifetime,
+  $confdir                = $puppetdb::params::confdir,
+  $puppetdb_user          = $puppetdb::params::puppetdb_user,
+  $puppetdb_group         = $puppetdb::params::puppetdb_group,
+  $database_max_pool_size = $puppetdb::params::read_database_max_pool_size,
 ) inherits puppetdb::params {
 
   # Only add the read database configuration if database host is defined.
@@ -39,20 +40,23 @@ class puppetdb::server::read_database (
       }
     }
 
-    file { "${confdir}/read_database.ini":
+    $read_database_ini = "${confdir}/read_database.ini"
+
+    file { $read_database_ini:
       ensure => file,
       owner  => $puppetdb_user,
       group  => $puppetdb_group,
-      mode   => '0600';
+      mode   => '0600',
     }
 
+    $file_require = File[$read_database_ini]
     $ini_setting_require = str2bool($database_validate) ? {
-      false => undef,
-      default  => Class['puppetdb::server::validate_read_db'],
+      false   => $file_require,
+      default => [$file_require, Class['puppetdb::server::validate_read_db']],
     }
     # Set the defaults
     Ini_setting {
-      path    => "${confdir}/read_database.ini",
+      path    => $read_database_ini,
       ensure  => present,
       section => 'read-database',
       require => $ini_setting_require,
@@ -74,13 +78,13 @@ class puppetdb::server::read_database (
 
       $subname = "//${database_host}:${database_port}/${database_name}${database_suffix}"
 
-      ini_setting { 'puppetdb_read_psdatabase_username':
+      ini_setting { 'puppetdb_read_database_username':
         setting => 'username',
         value   => $database_username,
       }
 
       if $database_password != undef {
-        ini_setting { 'puppetdb_read_psdatabase_password':
+        ini_setting { 'puppetdb_read_database_password':
           setting => 'password',
           value   => $database_password,
         }
@@ -125,6 +129,20 @@ class puppetdb::server::read_database (
     ini_setting { 'puppetdb_read_conn_lifetime':
       setting => 'conn-lifetime',
       value   => $conn_lifetime,
+    }
+
+    if $puppetdb::params::database_max_pool_size_setting_name != undef {
+      if $database_max_pool_size == 'absent' {
+        ini_setting { 'puppetdb_read_database_max_pool_size':
+          ensure  => absent,
+          setting => $puppetdb::params::database_max_pool_size_setting_name,
+        }
+      } elsif $database_max_pool_size != undef {
+        ini_setting { 'puppetdb_read_database_max_pool_size':
+          setting => $puppetdb::params::database_max_pool_size_setting_name,
+          value   => $database_max_pool_size,
+        }
+      }
     }
   } else {
     file { "${confdir}/read_database.ini":

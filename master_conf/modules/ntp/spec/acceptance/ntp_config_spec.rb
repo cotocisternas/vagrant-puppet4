@@ -6,7 +6,12 @@ when 'FreeBSD'
 when 'Debian'
   line = '0.debian.pool.ntp.org iburst'
 when 'RedHat'
-  line = '0.centos.pool.ntp.org'
+  line = case fact('operatingsystem')
+         when 'Fedora'
+           '0.fedora.pool.ntp.org'
+         else
+           '0.centos.pool.ntp.org'
+         end
 when 'Suse'
   line = '0.opensuse.pool.ntp.org'
 when 'Gentoo'
@@ -14,7 +19,7 @@ when 'Gentoo'
 when 'Linux'
   case fact('operatingsystem')
   when 'ArchLinux'
-    line = '0.pool.ntp.org'
+    line = '0.arch.pool.ntp.org'
   when 'Gentoo'
     line = '0.gentoo.pool.ntp.org'
   end
@@ -24,21 +29,21 @@ when 'AIX'
   line = '0.debian.pool.ntp.org iburst'
 end
 
-if (fact('osfamily') == 'Solaris')
-  config = '/etc/inet/ntp.conf'
-else
-  config = '/etc/ntp.conf'
-end
+config = if fact('osfamily') == 'Solaris'
+           '/etc/inet/ntp.conf'
+         else
+           '/etc/ntp.conf'
+         end
 
-describe 'ntp::config class', :unless => UNSUPPORTED_PLATFORMS.include?(fact('osfamily')) do
+describe 'ntp::config class', unless: UNSUPPORTED_PLATFORMS.include?(fact('osfamily')) do
   it 'sets up ntp.conf' do
-    apply_manifest(%{
+    apply_manifest(%(
       class { 'ntp': }
-    }, :catch_failures => true)
+    ), catch_failures: true)
   end
 
-  describe file("#{config}") do
-    it { should be_file }
-    its(:content) { should match line }
+  describe file(config.to_s) do
+    it { is_expected.to be_file }
+    its(:content) { is_expected.to match line }
   end
 end

@@ -20,7 +20,13 @@ class puppetdb::database::postgresql(
     class { '::postgresql::server':
       ip_mask_allow_all_users => '0.0.0.0/0',
       listen_addresses        => $listen_addresses,
-      port                    => $database_port,
+      port                    => scanf($database_port, '%i')[0],
+    }
+    # get the pg contrib to use pg_trgm extension
+    class { '::postgresql::server::contrib': }
+    postgresql::server::extension { 'pg_trgm':
+      database => $database_name,
+      require  => Postgresql::Server::Db[$database_name],
     }
   }
 

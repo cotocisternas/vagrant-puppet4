@@ -10,28 +10,35 @@ class puppetdb::params inherits puppetdb::globals {
   $ssl_listen_port           = '8081'
   $ssl_protocols             = undef
   $disable_ssl               = false
+  $cipher_suites             = undef
   $open_ssl_listen_port      = undef
   $postgres_listen_addresses = 'localhost'
 
   $puppetdb_version          = $puppetdb::globals::version
   $database                  = $puppetdb::globals::database
   $manage_dbserver           = true
-  $manage_pg_repo            = true
-  $postgres_version          = '9.4'
+
+  if $::osfamily =~ /RedHat|Debian/ {
+    $manage_pg_repo            = true
+  } else {
+    $manage_pg_repo            = false
+  }
+  $postgres_version          = '9.6'
 
   # The remaining database settings are not used for an embedded database
-  $database_host       = 'localhost'
-  $database_port       = '5432'
-  $database_name       = 'puppetdb'
-  $database_username   = 'puppetdb'
-  $database_password   = 'puppetdb'
-  $database_ssl        = undef
-  $jdbc_ssl_properties = ''
-  $database_validate   = true
+  $database_host          = 'localhost'
+  $database_port          = '5432'
+  $database_name          = 'puppetdb'
+  $database_username      = 'puppetdb'
+  $database_password      = 'puppetdb'
+  $database_ssl           = undef
+  $jdbc_ssl_properties    = ''
+  $database_validate      = true
+  $database_max_pool_size = undef
 
   # These settings manage the various auto-deactivation and auto-purge settings
-  $node_ttl               = '0s'
-  $node_purge_ttl         = '0s'
+  $node_ttl               = '7d'
+  $node_purge_ttl         = '14d'
   $report_ttl             = '14d'
 
   $gc_interval            = '60'
@@ -57,6 +64,7 @@ class puppetdb::params inherits puppetdb::globals {
   $read_conn_max_age                 = '60'
   $read_conn_keep_alive              = '45'
   $read_conn_lifetime                = '0'
+  $read_database_max_pool_size       = undef
 
   $manage_firewall         = true
   $java_args               = {}
@@ -64,8 +72,6 @@ class puppetdb::params inherits puppetdb::globals {
 
   $puppetdb_package     = 'puppetdb'
   $puppetdb_service     = 'puppetdb'
-  $puppetdb_user        = 'puppetdb'
-  $puppetdb_group       = 'puppetdb'
   $masterless           = false
 
   if !($puppetdb_version in ['latest','present','absent']) and versioncmp($puppetdb_version, '3.0.0') < 0 {
@@ -129,12 +135,23 @@ class puppetdb::params inherits puppetdb::globals {
 
   case $::osfamily {
     'RedHat', 'Suse', 'Archlinux': {
+      $puppetdb_user     = 'puppetdb'
+      $puppetdb_group    = 'puppetdb'
       $puppetdb_initconf = '/etc/sysconfig/puppetdb'
     }
     'Debian': {
+      $puppetdb_user     = 'puppetdb'
+      $puppetdb_group    = 'puppetdb'
       $puppetdb_initconf = '/etc/default/puppetdb'
     }
-    'OpenBSD','FreeBSD': {
+    'OpenBSD': {
+      $puppetdb_user     = '_puppetdb'
+      $puppetdb_group    = '_puppetdb'
+      $puppetdb_initconf = undef
+    }
+    'FreeBSD': {
+      $puppetdb_user     = 'puppetdb'
+      $puppetdb_group    = 'puppetdb'
       $puppetdb_initconf = undef
     }
     default: {
@@ -147,8 +164,10 @@ class puppetdb::params inherits puppetdb::globals {
   $puppetdb_service_status  = 'running'
 
   $command_threads          = undef
+  $concurrent_writes        = undef
   $store_usage              = undef
   $temp_usage               = undef
+  $disable_update_checking  = undef
 
   $ssl_set_cert_paths       = false
   $ssl_cert_path            = "${ssl_dir}/public.pem"
@@ -164,4 +183,13 @@ class puppetdb::params inherits puppetdb::globals {
   $certificate_whitelist      = [ ]
   # change to this to only allow access by the puppet master by default:
   #$certificate_whitelist      = [ $::servername ]
+
+  # Get the parameter name for the database connection pool tuning
+  if $puppetdb_version in ['latest','present'] or versioncmp($puppetdb_version, '4.0.0') >= 0 {
+    $database_max_pool_size_setting_name = 'maximum-pool-size'
+  } elsif versioncmp($puppetdb_version, '2.8.0') >= 0 {
+    $database_max_pool_size_setting_name = 'partition-conn-max'
+  } else {
+    $database_max_pool_size_setting_name = undef
+  }
 }

@@ -3,7 +3,7 @@ require 'spec_helper_acceptance'
 # Here we want to test the the resource commands ability to work with different
 # existing ruleset scenarios. This will give the parsing capabilities of the
 # code a good work out.
-describe 'puppet resource firewall command:', :unless => UNSUPPORTED_PLATFORMS.include?(fact('osfamily')) do
+describe 'puppet resource firewall command' do
   before(:all) do
     # In order to properly check stderr for anomalies we need to fix the deprecation warnings from puppet.conf.
     config = shell('puppet config print config').stdout
@@ -96,12 +96,12 @@ describe 'puppet resource firewall command:', :unless => UNSUPPORTED_PLATFORMS.i
     end
   end
 
-  if default['platform'] !~ /sles-10/
+  if default['platform'] !~ %r{sles-10}
     context 'accepts rules utilizing the statistic module' do
       before :all do
         iptables_flush_all_tables
         # This command doesn't work with all versions/oses, so let it fail
-        shell('iptables -t nat -A POSTROUTING -d 1.2.3.4/32 -o eth0 -m statistic --mode nth --every 2 -j SNAT --to-source 2.3.4.5', :acceptable_exit_codes => [0,1,2] )
+        shell('iptables -t nat -A POSTROUTING -d 1.2.3.4/32 -o eth0 -m statistic --mode nth --every 2 -j SNAT --to-source 2.3.4.5', acceptable_exit_codes: [0, 1, 2])
         shell('iptables -t nat -A POSTROUTING -d 1.2.3.4/32 -o eth0 -m statistic --mode nth --every 1 --packet 0 -j SNAT --to-source 2.3.4.6')
         shell('iptables -t nat -A POSTROUTING -d 1.2.3.4/32 -o eth0 -m statistic --mode random --probability 0.99 -j SNAT --to-source 2.3.4.7')
       end
@@ -150,9 +150,25 @@ describe 'puppet resource firewall command:', :unless => UNSUPPORTED_PLATFORMS.i
     end
   end
 
+  context 'accepts rules with -m ttl' do
+    before :all do
+      iptables_flush_all_tables
+      shell('iptables -t nat -A OUTPUT -s 10.0.0.0/8 -p tcp -m ttl ! --ttl-eq 42 -j REDIRECT --to-ports 12299')
+    end
+
+    it do
+      shell('puppet resource firewall') do |r|
+        r.exit_code.should be_zero
+        # don't check stdout, testing preexisting rules, output is normal
+        r.stderr.should be_empty
+      end
+    end
+  end
+
   # version of iptables that ships with el5 doesn't work with the
   # ip6tables provider
-  if default['platform'] !~ /el-5/ and default['platform'] !~ /sles-10/
+  # TODO: Test below fails if this file is run seperately. i.e. bundle exec rspec spec/acceptance/resource_cmd_spec.rb
+  if default['platform'] !~ %r{el-5} && default['platform'] !~ %r{sles-10}
     context 'dport/sport with ip6tables' do
       before :all do
         if fact('osfamily') == 'Debian'

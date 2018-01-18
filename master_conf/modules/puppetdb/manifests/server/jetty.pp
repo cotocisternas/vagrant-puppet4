@@ -11,15 +11,28 @@ class puppetdb::server::jetty (
   $ssl_key_path       = $puppetdb::params::ssl_key_path,
   $ssl_ca_cert_path   = $puppetdb::params::ssl_ca_cert_path,
   $ssl_protocols      = $puppetdb::params::ssl_protocols,
+  $cipher_suites      = $puppetdb::params::cipher_suites,
   $confdir            = $puppetdb::params::confdir,
   $max_threads        = $puppetdb::params::max_threads,
+  $puppetdb_user      = $puppetdb::params::puppetdb_user,
+  $puppetdb_group     = $puppetdb::params::puppetdb_group,
 ) inherits puppetdb::params {
+
+  $jetty_ini = "${confdir}/jetty.ini"
+
+  file { $jetty_ini:
+    ensure => file,
+    owner  => $puppetdb_user,
+    group  => $puppetdb_group,
+    mode   => '0600',
+  }
 
   # Set the defaults
   Ini_setting {
-    path    => "${confdir}/jetty.ini",
+    path    => $jetty_ini,
     ensure  => present,
     section => 'jetty',
+    require => File[$jetty_ini],
   }
 
   $cleartext_setting_ensure = $disable_cleartext ? {
@@ -64,6 +77,17 @@ class puppetdb::server::jetty (
       ensure  => $ssl_setting_ensure,
       setting => 'ssl-protocols',
       value   => $ssl_protocols,
+    }
+  }
+
+  if $cipher_suites != undef {
+
+    validate_string($cipher_suites)
+
+    ini_setting { 'puppetdb_cipher-suites':
+      ensure  => $ssl_setting_ensure,
+      setting => 'cipher-suites',
+      value   => $cipher_suites,
     }
   }
 

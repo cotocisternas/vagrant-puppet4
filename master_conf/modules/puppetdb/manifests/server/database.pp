@@ -19,6 +19,9 @@ class puppetdb::server::database (
   $conn_keep_alive        = $puppetdb::params::conn_keep_alive,
   $conn_lifetime          = $puppetdb::params::conn_lifetime,
   $confdir                = $puppetdb::params::confdir,
+  $puppetdb_user          = $puppetdb::params::puppetdb_user,
+  $puppetdb_group         = $puppetdb::params::puppetdb_group,
+  $database_max_pool_size = $puppetdb::params::database_max_pool_size,
 ) inherits puppetdb::params {
 
   if str2bool($database_validate) {
@@ -40,13 +43,23 @@ class puppetdb::server::database (
     }
   }
 
+  $database_ini = "${confdir}/database.ini"
+
+  file { $database_ini:
+    ensure => file,
+    owner  => $puppetdb_user,
+    group  => $puppetdb_group,
+    mode   => '0600',
+  }
+
+  $file_require = File[$database_ini]
   $ini_setting_require = str2bool($database_validate) ? {
-    false => undef,
-    default  => Class['puppetdb::server::validate_db'],
+    false => $file_require,
+    default  => [$file_require, Class['puppetdb::server::validate_db']],
   }
   # Set the defaults
   Ini_setting {
-    path    => "${confdir}/database.ini",
+    path    => $database_ini,
     ensure  => present,
     section => 'database',
     require => $ini_setting_require
@@ -146,5 +159,19 @@ class puppetdb::server::database (
   ini_setting { 'puppetdb_conn_lifetime':
     setting => 'conn-lifetime',
     value   => $conn_lifetime,
+  }
+
+  if $puppetdb::params::database_max_pool_size_setting_name != undef {
+    if $database_max_pool_size == 'absent' {
+      ini_setting { 'puppetdb_database_max_pool_size':
+        ensure  => absent,
+        setting => $puppetdb::params::database_max_pool_size_setting_name,
+      }
+    } elsif $database_max_pool_size != undef {
+      ini_setting { 'puppetdb_database_max_pool_size':
+        setting => $puppetdb::params::database_max_pool_size_setting_name,
+        value   => $database_max_pool_size,
+      }
+    }
   }
 }

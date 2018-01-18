@@ -1,5 +1,8 @@
 .vagrant
 puppet/*
+master_conf/modules/*
 veewee/*.box
 veewee/iso
 tmp/*
+
+!master_conf/modules/.keep

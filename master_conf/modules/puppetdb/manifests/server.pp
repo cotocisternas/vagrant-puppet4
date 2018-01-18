@@ -18,6 +18,7 @@ class puppetdb::server (
   $ssl_cert                          = $puppetdb::params::ssl_cert,
   $ssl_ca_cert                       = $puppetdb::params::ssl_ca_cert,
   $ssl_protocols                     = $puppetdb::params::ssl_protocols,
+  $cipher_suites                     = $puppetdb::params::cipher_suites,
   $database                          = $puppetdb::params::database,
   $database_host                     = $puppetdb::params::database_host,
   $database_port                     = $puppetdb::params::database_port,
@@ -55,15 +56,20 @@ class puppetdb::server (
   $read_conn_keep_alive              = $puppetdb::params::read_conn_keep_alive,
   $read_conn_lifetime                = $puppetdb::params::read_conn_lifetime,
   $confdir                           = $puppetdb::params::confdir,
+  $vardir                            = $puppetdb::params::vardir,
   $manage_firewall                   = $puppetdb::params::manage_firewall,
   $java_args                         = $puppetdb::params::java_args,
   $merge_default_java_args           = $puppetdb::params::merge_default_java_args,
   $max_threads                       = $puppetdb::params::max_threads,
   $command_threads                   = $puppetdb::params::command_threads,
+  $concurrent_writes                 = $puppetdb::params::concurrent_writes,
   $store_usage                       = $puppetdb::params::store_usage,
   $temp_usage                        = $puppetdb::params::temp_usage,
+  $disable_update_checking           = $puppetdb::params::disable_update_checking,
   $certificate_whitelist_file        = $puppetdb::params::certificate_whitelist_file,
   $certificate_whitelist             = $puppetdb::params::certificate_whitelist,
+  $database_max_pool_size            = $puppetdb::params::database_max_pool_size,
+  $read_database_max_pool_size       = $puppetdb::params::read_database_max_pool_size,
 ) inherits puppetdb::params {
   # deprecation warnings
   if $database_ssl != undef {
@@ -135,12 +141,21 @@ class puppetdb::server (
     }
   }
 
+  class { 'puppetdb::server::global':
+    vardir         => $vardir,
+    confdir        => $confdir,
+    puppetdb_user  => $puppetdb_user,
+    puppetdb_group => $puppetdb_group,
+    notify         => Service[$puppetdb_service],
+  }
+
   class { 'puppetdb::server::command_processing':
-    command_threads => $command_threads,
-    store_usage     => $store_usage,
-    temp_usage      => $temp_usage,
-    confdir         => $confdir,
-    notify          => Service[$puppetdb_service],
+    command_threads   => $command_threads,
+    concurrent_writes => $concurrent_writes,
+    store_usage       => $store_usage,
+    temp_usage        => $temp_usage,
+    confdir           => $confdir,
+    notify            => Service[$puppetdb_service],
   }
 
   class { 'puppetdb::server::database':
@@ -151,6 +166,7 @@ class puppetdb::server (
     database_password      => $database_password,
     database_name          => $database_name,
     database_ssl           => $database_ssl,
+    database_max_pool_size => $database_max_pool_size,
     jdbc_ssl_properties    => $jdbc_ssl_properties,
     database_validate      => $database_validate,
     database_embedded_path => $database_embedded_path,
@@ -163,25 +179,30 @@ class puppetdb::server (
     conn_keep_alive        => $conn_keep_alive,
     conn_lifetime          => $conn_lifetime,
     confdir                => $confdir,
+    puppetdb_user          => $puppetdb_user,
+    puppetdb_group         => $puppetdb_group,
     notify                 => Service[$puppetdb_service],
   }
 
   class { 'puppetdb::server::read_database':
-    database            => $read_database,
-    database_host       => $read_database_host,
-    database_port       => $read_database_port,
-    database_username   => $read_database_username,
-    database_password   => $read_database_password,
-    database_name       => $read_database_name,
-    database_ssl        => $read_database_ssl,
-    jdbc_ssl_properties => $read_database_jdbc_ssl_properties,
-    database_validate   => $read_database_validate,
-    log_slow_statements => $read_log_slow_statements,
-    conn_max_age        => $read_conn_max_age,
-    conn_keep_alive     => $read_conn_keep_alive,
-    conn_lifetime       => $read_conn_lifetime,
-    confdir             => $confdir,
-    notify              => Service[$puppetdb_service],
+    database               => $read_database,
+    database_host          => $read_database_host,
+    database_port          => $read_database_port,
+    database_username      => $read_database_username,
+    database_password      => $read_database_password,
+    database_name          => $read_database_name,
+    database_ssl           => $read_database_ssl,
+    jdbc_ssl_properties    => $read_database_jdbc_ssl_properties,
+    database_validate      => $read_database_validate,
+    log_slow_statements    => $read_log_slow_statements,
+    conn_max_age           => $read_conn_max_age,
+    conn_keep_alive        => $read_conn_keep_alive,
+    conn_lifetime          => $read_conn_lifetime,
+    confdir                => $confdir,
+    puppetdb_user          => $puppetdb_user,
+    puppetdb_group         => $puppetdb_group,
+    notify                 => Service[$puppetdb_service],
+    database_max_pool_size => $read_database_max_pool_size,
   }
 
   if str2bool($ssl_set_cert_paths) == true
@@ -193,7 +214,7 @@ class puppetdb::server (
 
   if str2bool($ssl_deploy_certs) == true {
     validate_absolute_path($ssl_dir)
-    file{
+    file {
       $ssl_dir:
         ensure  => directory,
         owner   => $puppetdb_user,
@@ -234,16 +255,22 @@ class puppetdb::server (
     ssl_cert_path      => $ssl_cert_path,
     ssl_ca_cert_path   => $ssl_ca_cert_path,
     ssl_protocols      => $ssl_protocols,
+    cipher_suites      => $cipher_suites,
     disable_ssl        => $disable_ssl,
     confdir            => $confdir,
     max_threads        => $max_threads,
     notify             => Service[$puppetdb_service],
+    puppetdb_user      => $puppetdb_user,
+    puppetdb_group     => $puppetdb_group,
   }
 
   class { 'puppetdb::server::puppetdb':
     certificate_whitelist_file => $certificate_whitelist_file,
     certificate_whitelist      => $certificate_whitelist,
+    disable_update_checking    => $disable_update_checking,
     confdir                    => $confdir,
+    puppetdb_user              => $puppetdb_user,
+    puppetdb_group             => $puppetdb_group,
     notify                     => Service[$puppetdb_service],
   }
 
@@ -282,6 +309,7 @@ class puppetdb::server (
   if $manage_firewall {
     Package[$puppetdb_package] ->
     Class['puppetdb::server::firewall'] ->
+    Class['puppetdb::server::global'] ->
     Class['puppetdb::server::command_processing'] ->
     Class['puppetdb::server::database'] ->
     Class['puppetdb::server::read_database'] ->
@@ -290,6 +318,7 @@ class puppetdb::server (
     Service[$puppetdb_service]
   } else {
     Package[$puppetdb_package] ->
+    Class['puppetdb::server::global'] ->
     Class['puppetdb::server::command_processing'] ->
     Class['puppetdb::server::database'] ->
     Class['puppetdb::server::read_database'] ->
