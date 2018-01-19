@@ -31,8 +31,8 @@ Vagrant.configure('2') do |config|
   }
 
   nodes = {
-    dns01: { host: 'tx-dns01-zz', ip: '172.16.211.2' },
-    mon01: { host: 'tx-mon01-zz', ip: '172.16.211.5', mem: 8192 },
+    # dns01: { host: 'tx-dns01-zz', ip: '172.16.211.2' },
+    # mon01: { host: 'tx-mon01-zz', ip: '172.16.211.5', mem: 8192 },
     # :dns02      => { host: 'tx-dns02-yy',          ip: '172.16.212.2' },
     # :dns03      => { host: 'tx-dns03-xx',          ip: '172.16.213.2' },
     # :mon03      => { host: 'tx-mon02-yy',          ip: '172.16.212.5', :mem => 8192 },
