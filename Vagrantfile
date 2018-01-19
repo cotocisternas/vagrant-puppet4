@@ -33,10 +33,10 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   }
 
   nodes = {
-    # :dns01      => { host: 'tx-dns01-zz',          ip: '172.16.211.2' },
+    dns01: { host: 'tx-dns01-zz', ip: '172.16.211.2' },
+    mon01: { host: 'tx-mon01-zz', ip: '172.16.211.5', mem: 8192 },
     # :dns02      => { host: 'tx-dns02-yy',          ip: '172.16.212.2' },
     # :dns03      => { host: 'tx-dns03-xx',          ip: '172.16.213.2' },
-    # :mon01      => { host: 'tx-mon01-zz',          ip: '172.16.211.5', :mem => 8192 },
     # :mon03      => { host: 'tx-mon02-yy',          ip: '172.16.212.5', :mem => 8192 },
     # :mon02      => { host: 'tx-mon03-xx',          ip: '172.16.213.5', :mem => 8192 },
     # :cons01     => { host: 'tx-consul01-zz',       ip: '172.16.211.101' },
@@ -90,19 +90,19 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
         ip: options[:ip], 
         libvirt__domain_name: options[:domain],
         libvirt__forward_mode: 'route',
-        libvirt__dhcp_enabled: false[:ip]
+        libvirt__dhcp_enabled: false
       node.vm.provision :hosts do |provisioner|
         provisioner.autoconfigure = false
         provisioner.add_host '172.16.211.10', ['tx-puppet01-zz.autentia.systems', 'tx-puppet01-zz', 'puppet']
         # provisioner.add_host '172.16.210.11', ['tx-puppet02-yy.autentia.systems', 'tx-puppet02-yy', 'puppet']
         # provisioner.add_host '172.16.210.12', ['tx-puppet03-xx.autentia.systems', 'tx-puppet03-xx', 'puppet']
       end
-      puppet.vm.provision :shell, :inline => "echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf"
-      puppet.vm.provision :shell, :inline => "echo -e 'deb http://ftp.cl.debian.org/debian stretch main non-free contrib\n\ndeb http://ftp.cl.debian.org/debian-security/ stretch/updates main contrib non-free\n\ndeb http://deb.debian.org/debian stretch-backports main contrib non-free' > /etc/apt/sources.list"
-      puppet.vm.provision :shell, :inline => "echo -e 'Package: *\nPin: release a=stretch-backports\nPin-Priority: 500' > /etc/apt/preferences"
-      puppet.vm.provision :shell, :inline => "apt-get update && apt-get -y install apt-transport-https zsh git curl && apt-get -y dist-upgrade"
-      puppet.vm.provision :shell, :inline => "/opt/puppetlabs/bin/puppet resource service puppet ensure=running enable=true"
-      puppet.vm.provision :shell, :path   => "master_conf/init.sh"
+      node.vm.provision :shell, :inline => "echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf"
+      node.vm.provision :shell, :inline => "echo -e 'deb http://ftp.cl.debian.org/debian stretch main non-free contrib\n\ndeb http://ftp.cl.debian.org/debian-security/ stretch/updates main contrib non-free\n\ndeb http://deb.debian.org/debian stretch-backports main contrib non-free' > /etc/apt/sources.list"
+      node.vm.provision :shell, :inline => "echo -e 'Package: *\nPin: release a=stretch-backports\nPin-Priority: 500' > /etc/apt/preferences"
+      node.vm.provision :shell, :inline => "apt-get update && apt-get -y install apt-transport-https zsh git curl && apt-get -y dist-upgrade"
+      node.vm.provision :shell, :path   => "master_conf/init.sh"
+      node.vm.provision :shell, :inline => "/opt/puppetlabs/bin/puppet resource service puppet ensure=running enable=true"
       node.vm.provider :libvirt do |kvm|
         kvm.memory  = options[:mem] if options[:mem]
         kvm.cpus    = options[:cpu] if options[:cpu]
