@@ -31,8 +31,8 @@ Vagrant.configure('2') do |config|
   }
 
   nodes = {
-    # dns01: { host: 'tx-dns01-zz', ip: '172.16.211.2' },
-    # mon01: { host: 'tx-mon01-zz', ip: '172.16.211.5', mem: 8192 },
+    dns01: { host: 'tx-dns01-zz', ip: '172.16.211.2' },
+    mon01: { host: 'tx-mon01-zz', ip: '172.16.211.5', mem: 8192 },
     # :dns02      => { host: 'tx-dns02-yy',          ip: '172.16.212.2' },
     # :dns03      => { host: 'tx-dns03-xx',          ip: '172.16.213.2' },
     # :mon03      => { host: 'tx-mon02-yy',          ip: '172.16.212.5', :mem => 8192 },
@@ -84,6 +84,7 @@ Vagrant.configure('2') do |config|
 
   nodes.each do |name, options|
     config.vm.define name do |node|
+      options[:domain] = 'autentia.systems' unless options[:domain]
       node.vm.hostname = "#{options[:host]}.#{options[:domain]}"
       node.vm.network :private_network,
                       ip: options[:ip],
@@ -93,9 +94,9 @@ Vagrant.configure('2') do |config|
                       libvirt__dhcp_enabled: false
       node.vm.provision :hosts do |provisioner|
         provisioner.autoconfigure = false
-        provisioner.add_host '172.16.211.10', ['tx-puppet01-zz.autentia.systems', 'tx-puppet01-zz', 'puppet']
-        # provisioner.add_host '172.16.210.11', ['tx-puppet02-yy.autentia.systems', 'tx-puppet02-yy', 'puppet']
-        # provisioner.add_host '172.16.210.12', ['tx-puppet03-xx.autentia.systems', 'tx-puppet03-xx', 'puppet']
+        provisioner.add_host '172.16.211.10', ['tx-puppet01-zz.autentia.services', 'tx-puppet01-zz', 'puppet']
+        # provisioner.add_host '172.16.210.11', ['tx-puppet02-yy.autentia.services', 'tx-puppet02-yy', 'puppet']
+        # provisioner.add_host '172.16.210.12', ['tx-puppet03-xx.autentia.services', 'tx-puppet03-xx', 'puppet']
       end
       node.vm.provision :shell, inline: "echo -e 'nameserver 8.8.8.8\nnameserver 8.8.4.4\n' > /etc/resolv.conf"
       node.vm.provision :shell, inline: "echo -e 'deb http://ftp.cl.debian.org/debian stretch main non-free contrib\n\ndeb http://ftp.cl.debian.org/debian-security/ stretch/updates main contrib non-free\n\ndeb http://deb.debian.org/debian stretch-backports main contrib non-free' > /etc/apt/sources.list"
