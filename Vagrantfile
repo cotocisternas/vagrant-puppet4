@@ -37,7 +37,7 @@ Vagrant.configure('2') do |config|
     # :dns03      => { host: 'tx-dns03-xx',          ip: '172.16.213.2' },
     # :mon03      => { host: 'tx-mon02-yy',          ip: '172.16.212.5', :mem => 8192 },
     # :mon02      => { host: 'tx-mon03-xx',          ip: '172.16.213.5', :mem => 8192 },
-    # :cons01     => { host: 'tx-consul01-zz',       ip: '172.16.211.101' },
+    cons01: { host: 'tx-consul01-zz', ip: '172.16.211.101' },
     # :cons02     => { host: 'tx-consul02-yy',       ip: '172.16.212.101' },
     # :cons03     => { host: 'tx-consul03-xx',       ip: '172.16.213.101' },
     # :vaul01     => { host: 'tx-vault01-zz',        ip: '172.16.211.111' },
