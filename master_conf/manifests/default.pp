@@ -41,8 +41,26 @@ node default {
     source  => '/vagrant/puppet/site.pp',
   }
 
-  class { 'puppetdb':
+  class { '::postgresql::server':
+    ip_mask_allow_all_users => '0.0.0.0/0',
+    listen_addresses        => 'puppetdb',
+    port                    => 'puppetdb',
+  }
+
+  class { '::postgresql::server::contrib': }
+
+  postgresql::server::extension { 'pg_trgm':
+    database  => $db_name,
+  }
+
+  class { '::puppetdb':
     listen_address      => '0.0.0.0',
+    database_host       => 'localhost',
+    database_port       => 5432,
+    database_username   => 'puppetdb',
+    database_password   => 'puppetdb',
+    database_name       => 'puppetdb',
+    manage_dbserver     => false,
     ssl_set_cert_paths  => true,
   }
 
