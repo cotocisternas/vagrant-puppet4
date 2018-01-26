@@ -50,7 +50,7 @@ node default {
   class { '::postgresql::server::contrib': }
 
   postgresql::server::extension { 'pg_trgm':
-    database  => $db_name,
+    database  => 'puppetdb',
   }
 
   class { '::puppetdb':

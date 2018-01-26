@@ -26,8 +26,31 @@ Vagrant.configure('2') do |config|
 
   config.ssh.forward_agent = true
 
+  ###############################################################
+  # app – Application Server (non-web)
+  # sql – Database Server
+  # ftp – SFTP server
+  # mta – Mail Server
+  # dns – Name Server
+  # cfg – Configuration Management (puppet/ansible/etc.)
+  # mon – Monitoring Server (nagios, sensu, etc.)
+  # prx – Proxy/Load Balancer (software)
+  # ssh – SSH Jump/Bastion Host
+  # sto – Storage Server
+  # vcs – Version Control Software Server (Git/SVN/CVS/etc.)
+  # vmm – Virtual Machine Manager
+  # web – Web Server
+  ###############################################################
+  # dev – Development
+  # tst – Testing
+  # stg – Staging
+  # prd – Production
+  ###############################################################
+  # /^(\w*)-(\D*)(\d{2})-(\w{2,3})\.(\w{3})$/
+  ###############################################################
+
   puppets = {
-    puppet01: { host: 'tx-puppet01-zz', ip: '172.16.211.10' }
+    puppet01: { host: 'devops-puppet01-zz.tst', ip: '172.16.211.10' }
   }
 
   nodes = {
