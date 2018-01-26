@@ -43,8 +43,8 @@ node default {
 
   class { '::postgresql::server':
     ip_mask_allow_all_users => '0.0.0.0/0',
-    listen_addresses        => 'puppetdb',
-    port                    => 'puppetdb',
+    listen_addresses        => 'localhost',
+    port                    => 5432,
   }
 
   class { '::postgresql::server::contrib': }
